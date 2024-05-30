@@ -1,0 +1,9 @@
+accelerate==0.22.0
+git+https://github.com/huggingface/diffusers@t2i-adapter-load-lora
+gradio==3.43.1
+Pillow==10.0.0
+safetensors==0.3.3
+torch==2.0.1
+torchvision==0.15.2
+transformers==4.33.1
+xformers==0.0.20

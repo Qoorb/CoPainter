@@ -1,0 +1,21 @@
+
+#component-0{
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+#description, h1 {
+  text-align: center;
+}
+
+#duplicate-button {
+  margin: auto;
+  color: #fff;
+  background: #1565c0;
+  border-radius: 100vh;
+}
+
+footer {
+  opacity: 0;
+  pointer-events: none;
+}
