@@ -14,7 +14,7 @@ from diffusers import (
 )
 
 
-DESCRIPTION = '''# **CO-Painter**'''
+DESCRIPTION = '''# **CO-Painter** '''
 
 if not torch.cuda.is_available():
     DESCRIPTION += "\n<p>Running on CPU 🥶 This demo does not work on CPU.</p>"
@@ -114,7 +114,7 @@ def randomize_seed_fn(seed: int, randomize_seed: bool) -> int:
 def run(
     image: PIL.Image.Image,
     prompt: str,
-    negative_prompt: str,
+    negative_prompt: str = '',
     style_name: str = DEFAULT_STYLE_NAME,
     num_steps: int = 25,
     guidance_scale: float = 5,
@@ -143,6 +143,28 @@ def run(
     return out
 
 
+# with gr.Blocks(css='style.css') as demo:
+#     with gr.Row():
+#         with gr.Column():
+#             with gr.Group():
+#                 image = gr.Image(
+#                     source="canvas",
+#                     tool="sketch",
+#                     type="pil",
+#                     image_mode="L",
+#                     invert_colors=True,
+#                     shape=(1024, 1024),
+#                     brush_radius=4,
+#                     height=440,
+#                     )
+#                 style = gr.Dropdown(label="Style", choices=STYLE_NAMES, value=DEFAULT_STYLE_NAME)
+#         with gr.Column():
+#             result = gr.Image(label="Result", height=440)
+#     inputs = [
+#         image,
+#         style
+#     ]
+
 with gr.Blocks(css="style.css") as demo:
     gr.Markdown(DESCRIPTION, elem_id="description")
     gr.DuplicateButton(
@@ -164,10 +186,10 @@ with gr.Blocks(css="style.css") as demo:
                     brush_radius=4,
                     height=440,
                 )
-                prompt = gr.Textbox(label="Prompt")
+                prompt = gr.Textbox(label="Prompt", value='', visible=False)
                 style = gr.Dropdown(label="Style", choices=STYLE_NAMES, value=DEFAULT_STYLE_NAME)
-                run_button = gr.Button("Run")
-            with gr.Accordion("Advanced options", open=False):
+                run_button = gr.Button("Run", visible=False)
+            with gr.Accordion("Advanced options", open=False, visible=False):
                 negative_prompt = gr.Textbox(
                     label="Negative prompt",
                     value=" extra digit, fewer digits, cropped, worst quality, low quality, glitch, deformed, mutated, ugly, disfigured",
@@ -210,7 +232,7 @@ with gr.Blocks(css="style.css") as demo:
                 )
                 randomize_seed = gr.Checkbox(label="Randomize seed", value=True)
         with gr.Column():
-            result = gr.Image(label="Result", height=400)
+            result = gr.Image(label="Result", height=440)
 
     inputs = [
         image,
@@ -254,6 +276,12 @@ with gr.Blocks(css="style.css") as demo:
         queue=False,
         api_name=False,
     ).then(
+        fn=run,
+        inputs=inputs,
+        outputs=result,
+        api_name=False,
+    )
+    image.change(
         fn=run,
         inputs=inputs,
         outputs=result,
