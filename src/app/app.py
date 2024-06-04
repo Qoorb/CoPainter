@@ -1,18 +1,20 @@
 from PyQt6.QtCore import Qt, QPoint, QSize
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage
-from PyQt6.QtWidgets import ( 
+from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
     QHBoxLayout, QWidget, QPushButton,
     QLabel, QFrame, QStackedWidget
-    )
+)
+
+from PIL import ImageQt
 
 
 class DrawingApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        
+
         self.initUI()
-        
+
     def initUI(self):
         self.setWindowTitle('Co-Painter')
 
@@ -28,7 +30,18 @@ class DrawingApp(QMainWindow):
         main_layout.addWidget(self.stacked_widget)
 
         self.drawing_area = DrawingArea(self)
-        self.drawing_area.setStyleSheet("background-color: white;")
+        self.drawing_area.setStyleSheet("background-color: white; border: 1px solid black;")
+        self.drawing_area.setFixedSize(600, 600)
+
+        self.result_area = QLabel(self)
+        self.result_area.setStyleSheet("background-color: white; border: 1px solid black; font-size: 24px; color: grey;")
+        self.result_area.setFixedSize(600, 600)
+        self.result_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.result_area.setText("Здесь будет результат!")
+
+        canvas_layout = QHBoxLayout()
+        canvas_layout.addWidget(self.drawing_area)
+        canvas_layout.addWidget(self.result_area)
 
         self.lower_bar = QFrame(self)
         self.lower_bar.setFixedSize(250, 36)
@@ -58,29 +71,43 @@ class DrawingApp(QMainWindow):
         self.clear_button.setStyleSheet("border: none;")
         self.clear_button.clicked.connect(self.drawing_area.clear_drawing)
 
+        self.show_result_button = QPushButton(self)
+        self.show_result_button.setIcon(QIcon(QPixmap('src/app/assets/generate_icon.png')))
+        self.show_result_button.setIconSize(QSize(24, 24))
+        self.show_result_button.setFixedSize(24, 24)
+        self.show_result_button.setStyleSheet("border: none;")
+        self.show_result_button.clicked.connect(self.show_result)
+
         lower_bar_layout.addWidget(self.pencil_button)
         lower_bar_layout.addWidget(self.eraser_button)
         lower_bar_layout.addWidget(self.clear_button)
+        lower_bar_layout.addWidget(self.show_result_button)
 
         self.canvas_and_toolbar_container = QWidget(self)
         container_layout = QVBoxLayout(self.canvas_and_toolbar_container)
         container_layout.setContentsMargins(0, 0, 0, 0)
 
-        container_layout.addWidget(self.drawing_area)
+        container_layout.addLayout(canvas_layout)
         container_layout.addWidget(self.lower_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.stacked_widget.addWidget(self.canvas_and_toolbar_container)
         self.stacked_widget.setCurrentIndex(0)
 
-        self.setGeometry(100, 100, 800, 600)
-        
+        self.setGeometry(100, 100, 1200, 700)
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        
+
         self.canvas_and_toolbar_container.move(
             (self.width() - self.canvas_and_toolbar_container.width()) // 2,
             self.height() - self.canvas_and_toolbar_container.height() - 10
         )
+
+    def show_result(self):
+        img = ImageQt.fromqimage(self.drawing_area.image) # pil
+        # output_img = run(img)
+        self.result_area.setPixmap(QPixmap.fromImage(self.drawing_area.image))
+        print(type(self.drawing_area.image))
 
 
 class DrawingArea(QWidget):
@@ -91,23 +118,31 @@ class DrawingArea(QWidget):
         self.pen_color = Qt.GlobalColor.black
         self.pen_width = 2
         self.clear_screen = True
-        
+
         self.label = QLabel("Начните творить!", self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setStyleSheet("font-size: 24px; color: grey;")
 
+        self.image = QImage(self.size(), QImage.Format.Format_RGB32)
+        self.image.fill(Qt.GlobalColor.white)
+
     def paintEvent(self, event):
         canvas = QPainter(self)
         canvas.fillRect(self.rect(), QColor('white'))
-        
+
         if self.clear_screen:
             self.label.setGeometry(self.rect())
             self.label.show()
         else:
             self.label.hide()
-        
+
         canvas.drawImage(self.rect(), self.image)
-        
+
+        pen = QPen(Qt.GlobalColor.black)
+        pen.setWidth(1)
+        canvas.setPen(pen)
+        canvas.drawRect(self.rect().adjusted(0, 0, -1, -1))
+
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.drawing = True
@@ -146,4 +181,3 @@ class DrawingArea(QWidget):
         self.image.fill(Qt.GlobalColor.white)
         self.clear_drawing()
         super().resizeEvent(event)
-
