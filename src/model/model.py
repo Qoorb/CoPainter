@@ -12,6 +12,8 @@ from diffusers import (
 )
 
 
+MAX_SEED = np.iinfo(np.int32).max
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Project running on device: ", device)
 
@@ -78,59 +80,63 @@ def apply_style(style_name: str, positive: str, negative: str = "") -> tuple[str
     return p.replace("{prompt}", positive), n + negative
 
 
-if not torch.cuda.is_available():
-    model_id = "stabilityai/stable-diffusion-xl-base-1.0"
-    adapter = T2IAdapter.from_pretrained(
-        "TencentARC/t2i-adapter-sketch-sdxl-1.0", torch_dtype=torch.float16, variant="fp16"
-    )
-    scheduler = EulerAncestralDiscreteScheduler.from_pretrained(model_id, subfolder="scheduler")
-    pipe = StableDiffusionXLAdapterPipeline.from_pretrained(
-        model_id,
-        vae=AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16),
-        adapter=adapter,
-        scheduler=scheduler,
-        torch_dtype=torch.float16,
-        variant="fp16",
-    )
-    pipe.to(device)
-else:
-    pipe = None
-
-MAX_SEED = np.iinfo(np.int32).max
-
-
 def randomize_seed_fn(seed: int, randomize_seed: bool) -> int:
     if randomize_seed:
         seed = random.randint(0, MAX_SEED)
     return seed
 
 
-def run(
-    image: PIL.Image.Image,
-    prompt: str = '',
-    negative_prompt: str = '',
-    style_name: str = DEFAULT_STYLE_NAME,
-    num_steps: int = 25,
-    guidance_scale: float = 5,
-    adapter_conditioning_scale: float = 0.8,
-    adapter_conditioning_factor: float = 0.8,
-    seed: int = 0
-) -> PIL.Image.Image:
-    image = image.convert("RGB")
-    image = TF.to_tensor(image) > 0.5
-    image = TF.to_pil_image(image.to(torch.float32))
+class Model:
+    def __init__(self) -> None:
+        self.model_id = "stabilityai/stable-diffusion-xl-base-1.0"
+        self.adapter = T2IAdapter.from_pretrained(
+            "TencentARC/t2i-adapter-sketch-sdxl-1.0", torch_dtype=torch.float16, variant="fp16"
+        )
+        self.scheduler = EulerAncestralDiscreteScheduler.from_pretrained(
+            self.model_id, subfolder="scheduler"
+            )
+        self.pipe = StableDiffusionXLAdapterPipeline.from_pretrained(
+            self.model_id,
+            vae=AutoencoderKL.from_pretrained(
+                "madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16
+                ),
+            adapter=self.adapter,
+            scheduler=self.scheduler,
+            torch_dtype=torch.float16,
+            variant="fp16",
+        )
+        self.pipe.to(device)
 
-    prompt, negative_prompt = apply_style(style_name, prompt, negative_prompt)
+    def run(
+        self,
+        image: PIL.Image.Image,
+        prompt: str = '',
+        negative_prompt: str = '',
+        style_name: str = DEFAULT_STYLE_NAME,
+        num_steps: int = 25,
+        guidance_scale: float = 5,
+        adapter_conditioning_scale: float = 0.8,
+        adapter_conditioning_factor: float = 0.8,
+        seed: int = 0
+    ) -> PIL.Image.Image:
+        seed = randomize_seed_fn(seed, True)
 
-    generator = torch.Generator(device=device).manual_seed(seed)
-    out = pipe(
-        prompt=prompt,
-        negative_prompt=negative_prompt,
-        image=image,
-        num_inference_steps=num_steps,
-        generator=generator,
-        guidance_scale=guidance_scale,
-        adapter_conditioning_scale=adapter_conditioning_scale,
-        adapter_conditioning_factor=adapter_conditioning_factor,
-    ).images[0]
-    return out
+        image = image.convert("RGB")
+        image = TF.to_tensor(image) > 0.5
+        image = TF.to_pil_image(image.to(torch.float32))
+
+        prompt, negative_prompt = apply_style(style_name, prompt, negative_prompt)
+
+        generator = torch.Generator(device=device).manual_seed(seed)
+        out = self.pipe(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            image=image,
+            num_inference_steps=num_steps,
+            generator=generator,
+            guidance_scale=guidance_scale,
+            adapter_conditioning_scale=adapter_conditioning_scale,
+            adapter_conditioning_factor=adapter_conditioning_factor,
+        ).images[0]
+
+        return out

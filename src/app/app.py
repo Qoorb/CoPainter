@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 )
 
 from PIL import ImageQt
+from src.model import Model
 
 
 class DrawingApp(QMainWindow):
@@ -105,9 +106,8 @@ class DrawingApp(QMainWindow):
 
     def show_result(self):
         img = ImageQt.fromqimage(self.drawing_area.image) # pil
-        # output_img = run(img)
+        output_img = Model().run(img) # TEST
         self.result_area.setPixmap(QPixmap.fromImage(self.drawing_area.image))
-        print(type(self.drawing_area.image))
 
 
 class DrawingArea(QWidget):

@@ -1,5 +1,4 @@
-diffusers==0.21.0.dev0
-gradio==4.32.2
+diffusers==0.28.1
 numpy==1.26.4
 Pillow==10.3.0
 PyQt6==6.7.0
