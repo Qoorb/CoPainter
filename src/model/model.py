@@ -1,5 +1,5 @@
 import random
-
+import asyncio
 import numpy as np
 import PIL.Image
 import torch
@@ -94,12 +94,12 @@ class Model:
         )
         self.scheduler = EulerAncestralDiscreteScheduler.from_pretrained(
             self.model_id, subfolder="scheduler"
-            )
+        )
         self.pipe = StableDiffusionXLAdapterPipeline.from_pretrained(
             self.model_id,
             vae=AutoencoderKL.from_pretrained(
                 "madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16
-                ),
+            ),
             adapter=self.adapter,
             scheduler=self.scheduler,
             torch_dtype=torch.float16,
@@ -128,15 +128,20 @@ class Model:
         prompt, negative_prompt = apply_style(style_name, prompt, negative_prompt)
 
         generator = torch.Generator(device=device).manual_seed(seed)
-        out = self.pipe(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            image=image,
-            num_inference_steps=num_steps,
-            generator=generator,
-            guidance_scale=guidance_scale,
-            adapter_conditioning_scale=adapter_conditioning_scale,
-            adapter_conditioning_factor=adapter_conditioning_factor,
-        ).images[0]
+        
+        loop = asyncio.get_event_loop()
+        out = await loop.run_in_executor(
+            None,
+            lambda: self.pipe(
+                prompt=prompt,
+                negative_prompt=negative_prompt,
+                image=image,
+                num_inference_steps=num_steps,
+                generator=generator,
+                guidance_scale=guidance_scale,
+                adapter_conditioning_scale=adapter_conditioning_scale,
+                adapter_conditioning_factor=adapter_conditioning_factor,
+            ).images[0]
+        )
 
         return out

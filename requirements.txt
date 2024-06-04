@@ -1,7 +1,11 @@
-diffusers==0.28.1
 numpy==1.26.4
 Pillow==10.3.0
 PyQt6==6.7.0
 PyQt6_sip==13.6.0
 torch==2.0.1
 torchvision==0.15.2
+accelerate==0.22.0
+git+https://github.com/huggingface/diffusers@t2i-adapter-load-lora
+safetensors==0.3.3
+transformers==4.33.1
+xformers==0.0.20

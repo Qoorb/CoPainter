@@ -1,6 +1,6 @@
 import asyncio
 
-from PyQt6.QtCore import Qt, QPoint, QSize
+from PyQt6.QtCore import Qt, QPoint, QSize, QEventLoop
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
@@ -80,7 +80,7 @@ class DrawingApp(QMainWindow):
         self.show_result_button.setIconSize(QSize(24, 24))
         self.show_result_button.setFixedSize(24, 24)
         self.show_result_button.setStyleSheet("border: none;")
-        self.show_result_button.clicked.connect(self.show_result)
+        self.show_result_button.clicked.connect(self.run_show_result)
 
         lower_bar_layout.addWidget(self.pencil_button)
         lower_bar_layout.addWidget(self.eraser_button)
@@ -107,8 +107,14 @@ class DrawingApp(QMainWindow):
             self.height() - self.canvas_and_toolbar_container.height() - 10
         )
 
+    def run_show_result(self):
+        loop = QEventLoop()
+        asyncio.set_event_loop(loop)
+        asyncio.ensure_future(self.show_result())
+        loop.run_until_complete(asyncio.ensure_future(self.show_result()))
+
     async def show_result(self):
-        img = ImageQt.fromqimage(self.drawing_area.image) # pil
+        img = ImageQt.fromqimage(self.drawing_area.image)  # pil
         output_img = await self.model.run(img)
         output_img.save('test.png')
 
