@@ -1,3 +1,5 @@
+import asyncio
+
 from PyQt6.QtCore import Qt, QPoint, QSize
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage
 from PyQt6.QtWidgets import (
@@ -13,6 +15,7 @@ from src.model import Model
 class DrawingApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.model = Model()
 
         self.initUI()
 
@@ -104,10 +107,13 @@ class DrawingApp(QMainWindow):
             self.height() - self.canvas_and_toolbar_container.height() - 10
         )
 
-    def show_result(self):
+    async def show_result(self):
         img = ImageQt.fromqimage(self.drawing_area.image) # pil
-        output_img = Model().run(img) # TEST
-        self.result_area.setPixmap(QPixmap.fromImage(self.drawing_area.image))
+        output_img = await self.model.run(img)
+        output_img.save('test.png')
+
+        self.result_area.setPixmap(QPixmap('test.png'))
+        # self.result_area.setPixmap(QPixmap.fromImage(QImage(ImageQt(output_img))))
 
 
 class DrawingArea(QWidget):

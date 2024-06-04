@@ -107,7 +107,7 @@ class Model:
         )
         self.pipe.to(device)
 
-    def run(
+    async def run(
         self,
         image: PIL.Image.Image,
         prompt: str = '',

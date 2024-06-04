@@ -2,7 +2,7 @@ from .app import DrawingApp, QApplication
 import sys
 
 
-def main():
+async def main():
     app = QApplication(sys.argv)
     ex = DrawingApp()
     ex.show()
