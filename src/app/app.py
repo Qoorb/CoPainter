@@ -1,5 +1,3 @@
-from multiprocessing import Process, Pipe
-
 from PyQt6.QtCore import Qt, QPoint, QSize, QThread, pyqtSignal, QObject
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage
 from PyQt6.QtWidgets import (
@@ -11,34 +9,6 @@ from PyQt6.QtWidgets import (
 from PIL import ImageQt
 from src.model import Model
 
-
-def generate_image(pipe, image, conn):
-    model = Model()
-    result = model.run(image)
-    conn.send(result)
-    conn.close()
-
-class Worker(QObject):
-    finished = pyqtSignal()
-    progress = pyqtSignal(str)
-    result = pyqtSignal(QPixmap)
-
-    def __init__(self, model, image):
-        super().__init__()
-        self.model = model
-        self.image = image
-
-    def run(self):
-        parent_conn, child_conn = Pipe()
-        process = Process(target=generate_image, args=(self.model, self.image, child_conn))
-        process.start()
-        self.progress.emit("Генерация изображения...")
-        result = parent_conn.recv()
-        process.join()
-        self.progress.emit("Генерация завершена")
-        pixmap = QPixmap.fromImage(ImageQt.ImageQt(result))
-        self.result.emit(pixmap)
-        self.finished.emit()
 
 class DrawingApp(QMainWindow):
     def __init__(self):
@@ -69,16 +39,14 @@ class DrawingApp(QMainWindow):
         self.result_area.setStyleSheet("background-color: white; border: 1px solid black; font-size: 24px; color: grey;")
         self.result_area.setFixedSize(600, 600)
         self.result_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.result_area.setText("Здесь будет отображаться результат")
+        self.result_area.setText("Здесь будет результат!")
 
         canvas_layout = QHBoxLayout()
-        canvas_layout.setContentsMargins(0, 0, 0, 0)
-        canvas_layout.setSpacing(10)
         canvas_layout.addWidget(self.drawing_area)
         canvas_layout.addWidget(self.result_area)
 
         self.lower_bar = QFrame(self)
-        self.lower_bar.setFixedSize(200, 50)
+        self.lower_bar.setFixedSize(250, 50)
         self.lower_bar.setStyleSheet("background-color: white; border: 1px solid black; border-radius: 15px;")
 
         lower_bar_layout = QHBoxLayout(self.lower_bar)
@@ -141,29 +109,22 @@ class DrawingApp(QMainWindow):
         )
 
     def run_show_result(self):
-        img = ImageQt.fromqimage(self.drawing_area.image)  # pil
-        self.worker = Worker(self.model, img)
-        self.worker.progress.connect(self.update_status_label)
-        self.worker.result.connect(self.display_image)
-        self.worker.finished.connect(self.on_worker_finished)
-
-        self.thread = QThread()
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.thread.start()
+        self.update_status_label("Генерация...")
+        try:
+            img = ImageQt.fromqimage(self.drawing_area.image)  # pil
+            result_img = self.model.run(img)
+            result_pixmap = QPixmap.fromImage(ImageQt.toqimage(result_img))
+            self.display_image(result_pixmap)
+            self.update_status_label("Готово")
+        except Exception as e:
+            self.update_status_label(f"Ошибка: {e}")
+            print(e)
 
     def update_status_label(self, text):
         self.status_label.setText(text)
 
     def display_image(self, pixmap):
         self.result_area.setPixmap(pixmap)
-
-    def on_worker_finished(self):
-        self.thread.quit()
-        self.thread.wait()
-        self.worker.deleteLater()
-        self.thread.deleteLater()
-
 
 class DrawingArea(QWidget):
     def __init__(self, parent=None):
