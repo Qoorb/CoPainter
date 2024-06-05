@@ -1,4 +1,6 @@
-from PyQt6.QtCore import Qt, QPoint, QSize, QThread, pyqtSignal, QObject
+import PIL.Image
+
+from PyQt6.QtCore import Qt, QPoint, QSize, QThread, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
@@ -8,6 +10,25 @@ from PyQt6.QtWidgets import (
 
 from PIL import ImageQt
 from src.model import Model
+
+
+class ImageGenerationThread(QThread):
+    result_ready = pyqtSignal(PIL.Image.Image)
+    error_occurred = pyqtSignal(str)
+
+    def __init__(self, model, image):
+        super().__init__()
+        self.model = model
+        self.image = image
+
+    def run(self):
+        try:
+            result_image = self.model.run(
+                image=self.image
+            )
+            self.result_ready.emit(result_image)
+        except Exception as e:
+            self.error_occurred.emit(str(e))
 
 
 class DrawingApp(QMainWindow):
@@ -39,18 +60,18 @@ class DrawingApp(QMainWindow):
         self.result_area.setStyleSheet("background-color: white; border: 1px solid black; font-size: 24px; color: grey;")
         self.result_area.setFixedSize(600, 600)
         self.result_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.result_area.setText("Здесь будет результат!")
 
         canvas_layout = QHBoxLayout()
         canvas_layout.addWidget(self.drawing_area)
         canvas_layout.addWidget(self.result_area)
 
         self.lower_bar = QFrame(self)
-        self.lower_bar.setFixedSize(250, 50)
-        self.lower_bar.setStyleSheet("background-color: white; border: 1px solid black; border-radius: 15px;")
+        self.lower_bar.setFrameShape(QFrame.Shape.NoFrame)
+        self.lower_bar.setFixedHeight(40)
 
         lower_bar_layout = QHBoxLayout(self.lower_bar)
         lower_bar_layout.setContentsMargins(0, 0, 0, 0)
+        lower_bar_layout.setSpacing(10)
 
         self.pencil_button = QPushButton(self)
         self.pencil_button.setIcon(QIcon(QPixmap('src/app/assets/pencil_icon.png')))
@@ -110,15 +131,22 @@ class DrawingApp(QMainWindow):
 
     def run_show_result(self):
         self.update_status_label("Генерация...")
-        try:
-            img = ImageQt.fromqimage(self.drawing_area.image)  # pil
-            result_img = self.model.run(img)
-            result_pixmap = QPixmap.fromImage(ImageQt.toqimage(result_img))
-            self.display_image(result_pixmap)
-            self.update_status_label("Готово")
-        except Exception as e:
-            self.update_status_label(f"Ошибка: {e}")
-            print(e)
+        img = ImageQt.fromqimage(self.drawing_area.image)  # pil
+        self.generation_thread = ImageGenerationThread(self.model, img)
+        self.generation_thread.result_ready.connect(self.on_generation_complete)
+        self.generation_thread.error_occurred.connect(self.on_generation_error)
+        self.generation_thread.start()
+
+    @pyqtSlot(PIL.Image.Image)
+    def on_generation_complete(self, result_img):
+        result_pixmap = QPixmap.fromImage(ImageQt.toqimage(result_img))
+        self.display_image(result_pixmap)
+        self.update_status_label("Готово")
+
+    @pyqtSlot(str)
+    def on_generation_error(self, error):
+        self.update_status_label(f"Ошибка: {error}")
+        print(error)
 
     def update_status_label(self, text):
         self.status_label.setText(text)
