@@ -1,7 +1,6 @@
-import asyncio
+from multiprocessing import Process, Pipe
 
-import sys
-from PyQt6.QtCore import Qt, QPoint, QSize, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QPoint, QSize, QThread, pyqtSignal, QObject
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
@@ -13,26 +12,33 @@ from PIL import ImageQt
 from src.model import Model
 
 
-# Обновленный код для многопоточности
-class GenerateImageThread(QThread):
-    update_label = pyqtSignal(str)
-    image_ready = pyqtSignal(QPixmap)
+def generate_image(pipe, image, conn):
+    model = Model()
+    result = model.run(image)
+    conn.send(result)
+    conn.close()
 
-    def __init__(self, model, sketch):
+class Worker(QObject):
+    finished = pyqtSignal()
+    progress = pyqtSignal(str)
+    result = pyqtSignal(QPixmap)
+
+    def __init__(self, model, image):
         super().__init__()
         self.model = model
-        self.sketch = sketch
+        self.image = image
 
     def run(self):
-        self.update_label.emit("Генерация изображения...")
-        generated_image = self.process_sketch(self.sketch)
-        self.update_label.emit("Генерация завершена")
-        self.image_ready.emit(generated_image)
-
-    def process_sketch(self, sketch):
-        image = self.model.run(sketch)
-        return QPixmap.fromImage(ImageQt.ImageQt(image))
-
+        parent_conn, child_conn = Pipe()
+        process = Process(target=generate_image, args=(self.model, self.image, child_conn))
+        process.start()
+        self.progress.emit("Генерация изображения...")
+        result = parent_conn.recv()
+        process.join()
+        self.progress.emit("Генерация завершена")
+        pixmap = QPixmap.fromImage(ImageQt.ImageQt(result))
+        self.result.emit(pixmap)
+        self.finished.emit()
 
 class DrawingApp(QMainWindow):
     def __init__(self):
@@ -63,15 +69,17 @@ class DrawingApp(QMainWindow):
         self.result_area.setStyleSheet("background-color: white; border: 1px solid black; font-size: 24px; color: grey;")
         self.result_area.setFixedSize(600, 600)
         self.result_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.result_area.setText("Здесь будет результат!")
+        self.result_area.setText("Здесь будет отображаться результат")
 
         canvas_layout = QHBoxLayout()
+        canvas_layout.setContentsMargins(0, 0, 0, 0)
+        canvas_layout.setSpacing(10)
         canvas_layout.addWidget(self.drawing_area)
         canvas_layout.addWidget(self.result_area)
 
         self.lower_bar = QFrame(self)
-        self.lower_bar.setFixedSize(250, 36)
-        self.lower_bar.setStyleSheet("background-color: lightgrey; border-radius: 16px;")
+        self.lower_bar.setFixedSize(200, 50)
+        self.lower_bar.setStyleSheet("background-color: white; border: 1px solid black; border-radius: 15px;")
 
         lower_bar_layout = QHBoxLayout(self.lower_bar)
         lower_bar_layout.setContentsMargins(0, 0, 0, 0)
@@ -127,7 +135,6 @@ class DrawingApp(QMainWindow):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-
         self.canvas_and_toolbar_container.move(
             (self.width() - self.canvas_and_toolbar_container.width()) // 2,
             self.height() - self.canvas_and_toolbar_container.height() - 10
@@ -135,9 +142,14 @@ class DrawingApp(QMainWindow):
 
     def run_show_result(self):
         img = ImageQt.fromqimage(self.drawing_area.image)  # pil
-        self.thread = GenerateImageThread(self.model, img)
-        self.thread.update_label.connect(self.update_status_label)
-        self.thread.image_ready.connect(self.display_image)
+        self.worker = Worker(self.model, img)
+        self.worker.progress.connect(self.update_status_label)
+        self.worker.result.connect(self.display_image)
+        self.worker.finished.connect(self.on_worker_finished)
+
+        self.thread = QThread()
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.run)
         self.thread.start()
 
     def update_status_label(self, text):
@@ -145,6 +157,12 @@ class DrawingApp(QMainWindow):
 
     def display_image(self, pixmap):
         self.result_area.setPixmap(pixmap)
+
+    def on_worker_finished(self):
+        self.thread.quit()
+        self.thread.wait()
+        self.worker.deleteLater()
+        self.thread.deleteLater()
 
 
 class DrawingArea(QWidget):
