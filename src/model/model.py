@@ -107,7 +107,7 @@ class Model:
         )
         self.pipe.to(device)
 
-    async def run(
+    def run(
         self,
         image: PIL.Image.Image,
         prompt: str = '',
@@ -120,28 +120,22 @@ class Model:
         seed: int = 0
     ) -> PIL.Image.Image:
         seed = randomize_seed_fn(seed, True)
-
         image = image.convert("RGB")
         image = TF.to_tensor(image) > 0.5
         image = TF.to_pil_image(image.to(torch.float32))
 
         prompt, negative_prompt = apply_style(style_name, prompt, negative_prompt)
-
         generator = torch.Generator(device=device).manual_seed(seed)
         
-        loop = asyncio.get_event_loop()
-        out = await loop.run_in_executor(
-            None,
-            lambda: self.pipe(
-                prompt=prompt,
-                negative_prompt=negative_prompt,
-                image=image,
-                num_inference_steps=num_steps,
-                generator=generator,
-                guidance_scale=guidance_scale,
-                adapter_conditioning_scale=adapter_conditioning_scale,
-                adapter_conditioning_factor=adapter_conditioning_factor,
-            ).images[0]
-        )
+        out = self.pipe(
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            image=image,
+            num_inference_steps=num_steps,
+            generator=generator,
+            guidance_scale=guidance_scale,
+            adapter_conditioning_scale=adapter_conditioning_scale,
+            adapter_conditioning_factor=adapter_conditioning_factor,
+        ).images[0]
 
         return out

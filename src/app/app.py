@@ -13,6 +13,7 @@ from PIL import ImageQt
 from src.model import Model
 
 
+# Обновленный код для многопоточности
 class GenerateImageThread(QThread):
     update_label = pyqtSignal(str)
     image_ready = pyqtSignal(QPixmap)
@@ -29,9 +30,7 @@ class GenerateImageThread(QThread):
         self.image_ready.emit(generated_image)
 
     def process_sketch(self, sketch):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        image = loop.run_until_complete(self.model.run(sketch))
+        image = self.model.run(sketch)
         return QPixmap.fromImage(ImageQt.ImageQt(image))
 
 
@@ -219,10 +218,3 @@ class DrawingArea(QWidget):
         self.image.fill(Qt.GlobalColor.white)
         self.clear_drawing()
         super().resizeEvent(event)
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    mainWin = DrawingApp()
-    mainWin.show()
-    sys.exit(app.exec())
