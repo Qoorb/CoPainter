@@ -1,6 +1,7 @@
 import asyncio
 
-from PyQt6.QtCore import Qt, QPoint, QSize, QEventLoop
+import sys
+from PyQt6.QtCore import Qt, QPoint, QSize, QThread, pyqtSignal
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
@@ -10,6 +11,28 @@ from PyQt6.QtWidgets import (
 
 from PIL import ImageQt
 from src.model import Model
+
+
+class GenerateImageThread(QThread):
+    update_label = pyqtSignal(str)
+    image_ready = pyqtSignal(QPixmap)
+
+    def __init__(self, model, sketch):
+        super().__init__()
+        self.model = model
+        self.sketch = sketch
+
+    def run(self):
+        self.update_label.emit("Генерация изображения...")
+        generated_image = self.process_sketch(self.sketch)
+        self.update_label.emit("Генерация завершена")
+        self.image_ready.emit(generated_image)
+
+    def process_sketch(self, sketch):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        image = loop.run_until_complete(self.model.run(sketch))
+        return QPixmap.fromImage(ImageQt.ImageQt(image))
 
 
 class DrawingApp(QMainWindow):
@@ -87,12 +110,16 @@ class DrawingApp(QMainWindow):
         lower_bar_layout.addWidget(self.clear_button)
         lower_bar_layout.addWidget(self.show_result_button)
 
+        self.status_label = QLabel("Готово", self)
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         self.canvas_and_toolbar_container = QWidget(self)
         container_layout = QVBoxLayout(self.canvas_and_toolbar_container)
         container_layout.setContentsMargins(0, 0, 0, 0)
 
         container_layout.addLayout(canvas_layout)
         container_layout.addWidget(self.lower_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
+        container_layout.addWidget(self.status_label)
 
         self.stacked_widget.addWidget(self.canvas_and_toolbar_container)
         self.stacked_widget.setCurrentIndex(0)
@@ -108,18 +135,17 @@ class DrawingApp(QMainWindow):
         )
 
     def run_show_result(self):
-        loop = QEventLoop()
-        asyncio.set_event_loop(loop)
-        asyncio.ensure_future(self.show_result())
-        loop.run_until_complete(asyncio.ensure_future(self.show_result()))
-
-    async def show_result(self):
         img = ImageQt.fromqimage(self.drawing_area.image)  # pil
-        output_img = await self.model.run(img)
-        output_img.save('test.png')
+        self.thread = GenerateImageThread(self.model, img)
+        self.thread.update_label.connect(self.update_status_label)
+        self.thread.image_ready.connect(self.display_image)
+        self.thread.start()
 
-        self.result_area.setPixmap(QPixmap('test.png'))
-        # self.result_area.setPixmap(QPixmap.fromImage(QImage(ImageQt(output_img))))
+    def update_status_label(self, text):
+        self.status_label.setText(text)
+
+    def display_image(self, pixmap):
+        self.result_area.setPixmap(pixmap)
 
 
 class DrawingArea(QWidget):
@@ -193,3 +219,10 @@ class DrawingArea(QWidget):
         self.image.fill(Qt.GlobalColor.white)
         self.clear_drawing()
         super().resizeEvent(event)
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    mainWin = DrawingApp()
+    mainWin.show()
+    sys.exit(app.exec())
