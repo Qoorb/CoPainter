@@ -13,6 +13,7 @@ from src.model import Model
 class WorkerSignals(QObject):
 
     result = pyqtSignal(object)
+    finished = pyqtSignal()
 
 
 class Worker(QRunnable):
@@ -27,6 +28,7 @@ class Worker(QRunnable):
     def run(self):
         result = self.generate_result(ImageQt.fromqimage(self.img))
         self.signals.result.emit(result)
+        self.signals.finished.emit()
 
 
 class DrawingApp(QMainWindow):
@@ -60,6 +62,23 @@ class DrawingApp(QMainWindow):
         self.result_area.setFixedSize(600, 600)
         self.result_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.result_area.setText("Здесь будет результат!")
+
+        self.top_bar = QFrame(self)
+
+        header_layout = QHBoxLayout(self.top_bar)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.logo_area = QLabel()
+        self.logo_area.setPixmap(QPixmap('src/app/assets/logo.png').scaled(250, 100, Qt.AspectRatioMode.KeepAspectRatio))
+        self.logo_area.setFixedSize(250, 36)
+
+        self.name_area = QLabel(self)
+        self.name_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.name_area.setStyleSheet("font-size: 24px; color: grey;")
+        self.name_area.setText("Нейро-Мольберт")
+
+        header_layout.addWidget(self.logo_area)
+        header_layout.addWidget(self.name_area)
 
         canvas_layout = QHBoxLayout()
         canvas_layout.addWidget(self.drawing_area)
@@ -109,6 +128,7 @@ class DrawingApp(QMainWindow):
         container_layout = QVBoxLayout(self.canvas_and_toolbar_container)
         container_layout.setContentsMargins(0, 0, 0, 0)
 
+        container_layout.addWidget(self.top_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
         container_layout.addLayout(canvas_layout)
         container_layout.addWidget(self.lower_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
 
@@ -132,6 +152,11 @@ class DrawingApp(QMainWindow):
         worker = Worker(self.model.run, self.drawing_area.image)
         worker.signals.result.connect(self.update_result)
         self.threadpool.start(worker)
+
+        self.show_result_button.setEnabled(False)
+        worker.signals.finished.connect(
+            lambda: self.show_result_button.setEnabled(True)
+        )
 
 
 class DrawingArea(QWidget):
