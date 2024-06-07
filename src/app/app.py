@@ -70,14 +70,16 @@ class DrawingApp(QMainWindow):
 
         self.logo_area = QLabel()
         self.logo_area.setPixmap(QPixmap('src/app/assets/logo.png').scaled(250, 100, Qt.AspectRatioMode.KeepAspectRatio))
-        self.logo_area.setFixedSize(250, 36)
+        
+        self.sep_area = QLabel()
+        self.sep_area.setPixmap(QPixmap('src/app/assets/line.png'))
 
         self.name_area = QLabel(self)
-        self.name_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.name_area.setStyleSheet("font-size: 24px; color: grey;")
         self.name_area.setText("Нейро-Мольберт")
 
         header_layout.addWidget(self.logo_area)
+        header_layout.addWidget(self.sep_area)
         header_layout.addWidget(self.name_area)
 
         canvas_layout = QHBoxLayout()
