@@ -106,13 +106,13 @@ class Model:
         )
         self.pipe.to(device)
 
-    async def run(
+    def run(
         self,
         image: PIL.Image.Image,
         prompt: str = '',
         negative_prompt: str = '',
         style_name: str = DEFAULT_STYLE_NAME,
-        num_steps: int = 25,
+        num_steps: int = 2,
         guidance_scale: float = 5,
         adapter_conditioning_scale: float = 0.8,
         adapter_conditioning_factor: float = 0.8,
@@ -128,8 +128,7 @@ class Model:
 
         generator = torch.Generator(device=device).manual_seed(seed)
         
-        async def generate_image():
-            return self.pipe(
+        out = self.pipe(
                 prompt=prompt,
                 negative_prompt=negative_prompt,
                 image=image,
@@ -140,4 +139,4 @@ class Model:
                 adapter_conditioning_factor=adapter_conditioning_factor,
             ).images[0]
         
-        return await generate_image()
+        return out

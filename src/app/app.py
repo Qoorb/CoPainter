@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QPoint, QSize
+from PyQt6.QtCore import Qt, QPoint, QSize, QRunnable, pyqtSlot, QThreadPool, QObject, pyqtSignal
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
@@ -10,11 +10,32 @@ from PIL import ImageQt
 from src.model import Model
 
 
+class WorkerSignals(QObject):
+
+    result = pyqtSignal(object)
+
+
+class Worker(QRunnable):
+
+    def __init__(self, generate_result, img):
+        super(Worker, self).__init__()
+        self.generate_result = generate_result
+        self.img = img
+        self.signals = WorkerSignals()
+        
+    @pyqtSlot()
+    def run(self):
+        result = self.generate_result(ImageQt.fromqimage(self.img))
+        self.signals.result.emit(result)
+
+
 class DrawingApp(QMainWindow):
+
     def __init__(self):
-        super().__init__()
+        super(DrawingApp, self).__init__()
         self.model = Model()
         self.initUI()
+        self.threadpool = QThreadPool()
 
     def initUI(self):
         self.setWindowTitle('Co-Painter')
@@ -77,7 +98,7 @@ class DrawingApp(QMainWindow):
         self.show_result_button.setIconSize(QSize(24, 24))
         self.show_result_button.setFixedSize(24, 24)
         self.show_result_button.setStyleSheet("border: none;")
-        self.show_result_button.clicked.connect(self.show_result)
+        self.show_result_button.clicked.connect(self.generate_image)
 
         lower_bar_layout.addWidget(self.pencil_button)
         lower_bar_layout.addWidget(self.eraser_button)
@@ -104,15 +125,17 @@ class DrawingApp(QMainWindow):
             self.height() - self.canvas_and_toolbar_container.height() - 10
         )
 
-    async def show_result(self):
-        img = ImageQt.fromqimage(self.drawing_area.image)  # pil
-        output_img = await self.model.run(img)
-        result_pixmap = QPixmap.fromImage(ImageQt.toqimage(output_img))
+    def update_result(self, output):
+        self.result_area.setPixmap(QPixmap.fromImage(ImageQt.toqimage(output.convert("RGBA"))))
 
-        self.result_area.setPixmap(result_pixmap)
+    def generate_image(self):
+        worker = Worker(self.model.run, self.drawing_area.image)
+        worker.signals.result.connect(self.update_result)
+        self.threadpool.start(worker)
 
 
 class DrawingArea(QWidget):
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.drawing = False
