@@ -3,8 +3,8 @@
 ## TODO
 
 - [X] add btn disabled
-- [ ] add styles
-- [ ] add progress bar
+- [ ] add styles?
+- [ ] add progress bar?
 - [ ] test params
 - [ ] add Undo/Redo?
 - [X] add fullscreen

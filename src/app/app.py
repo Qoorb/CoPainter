@@ -54,16 +54,17 @@ class DrawingApp(QMainWindow):
         main_layout.addWidget(self.stacked_widget)
 
         self.drawing_area = DrawingArea(self)
-        self.drawing_area.setStyleSheet("background-color: white; border: 1px solid black;")
+        self.drawing_area.setStyleSheet("background-color: white; border: 1px solid #29be46;")
         self.drawing_area.setFixedSize(600, 600)
 
         self.result_area = QLabel(self)
-        self.result_area.setStyleSheet("background-color: white; border: 1px solid black; font-size: 24px; color: grey;")
+        self.result_area.setStyleSheet("background-color: white; border: 1px solid #29be46; font-size: 24px; color: grey;")
         self.result_area.setFixedSize(600, 600)
         self.result_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.result_area.setText("Здесь будет результат!")
 
         self.top_bar = QFrame(self)
+        self.top_bar.setStyleSheet('padding-left: 20px;')
 
         header_layout = QHBoxLayout(self.top_bar)
         header_layout.setContentsMargins(0, 0, 0, 0)
@@ -83,12 +84,12 @@ class DrawingApp(QMainWindow):
         header_layout.addWidget(self.name_area)
 
         canvas_layout = QHBoxLayout()
-        canvas_layout.addWidget(self.drawing_area)
-        canvas_layout.addWidget(self.result_area)
+        canvas_layout.addWidget(self.drawing_area, alignment=Qt.AlignmentFlag.AlignHCenter)
+        canvas_layout.addWidget(self.result_area, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.lower_bar = QFrame(self)
         self.lower_bar.setFixedSize(250, 36)
-        self.lower_bar.setStyleSheet("background-color: lightgrey; border-radius: 16px;")
+        self.lower_bar.setStyleSheet("background-color: #29be46; border-radius: 16px;")
 
         lower_bar_layout = QHBoxLayout(self.lower_bar)
         lower_bar_layout.setContentsMargins(0, 0, 0, 0)
@@ -130,7 +131,7 @@ class DrawingApp(QMainWindow):
         container_layout = QVBoxLayout(self.canvas_and_toolbar_container)
         container_layout.setContentsMargins(0, 0, 0, 0)
 
-        container_layout.addWidget(self.top_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
+        container_layout.addWidget(self.top_bar, alignment=Qt.AlignmentFlag.AlignLeft)
         container_layout.addLayout(canvas_layout)
         container_layout.addWidget(self.lower_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
 
@@ -191,7 +192,7 @@ class DrawingArea(QWidget):
 
         canvas.drawImage(self.rect(), self.image)
 
-        pen = QPen(Qt.GlobalColor.black)
+        pen = QPen(Qt.GlobalColor.lightGray)
         pen.setWidth(1)
         canvas.setPen(pen)
         canvas.drawRect(self.rect().adjusted(0, 0, -1, -1))
