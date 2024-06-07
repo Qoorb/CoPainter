@@ -141,4 +141,4 @@ class Model:
                 adapter_conditioning_factor=adapter_conditioning_factor,
             ).images[0]
         
-        return out
+        return out.resize((600, 600)) # resize pics
