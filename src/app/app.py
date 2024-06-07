@@ -136,6 +136,7 @@ class DrawingApp(QMainWindow):
         self.stacked_widget.setCurrentIndex(0)
 
         self.setGeometry(100, 100, 1200, 700)
+        self.showFullScreen()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

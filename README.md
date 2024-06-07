@@ -7,6 +7,6 @@
 - [ ] add progress bar
 - [ ] test params
 - [ ] add Undo/Redo?
-- [ ] add fullscreen
+- [X] add fullscreen
 - [ ] fix draw/pen
 - [ ] flipchart pen
