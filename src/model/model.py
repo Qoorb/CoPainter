@@ -1,4 +1,6 @@
 import random
+
+import PIL.ImageOps
 import numpy as np
 import PIL.Image
 import torch
@@ -120,7 +122,7 @@ class Model:
     ) -> PIL.Image.Image:
         seed = randomize_seed_fn(seed, True)
 
-        image = image.convert("RGB")
+        image = PIL.ImageOps.invert(image.convert("RGB").resize((1024, 1024)))
         image = TF.to_tensor(image) > 0.5
         image = TF.to_pil_image(image.to(torch.float32))
 
