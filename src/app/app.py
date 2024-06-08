@@ -1,5 +1,5 @@
 from PyQt6.QtCore import Qt, QPoint, QSize, QRunnable, pyqtSlot, QThreadPool, QObject, pyqtSignal
-from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage
+from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage, QMovie
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
     QHBoxLayout, QWidget, QPushButton,
@@ -63,6 +63,8 @@ class DrawingApp(QMainWindow):
         self.result_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.result_area.setText("Здесь будет результат!")
 
+        self.movie = QMovie("src/app/assets/processing.gif")
+        
         self.top_bar = QFrame(self)
         self.top_bar.setStyleSheet('padding-left: 20px;')
 
@@ -121,6 +123,7 @@ class DrawingApp(QMainWindow):
         self.show_result_button.setFixedSize(24, 24)
         self.show_result_button.setStyleSheet("border: none;")
         self.show_result_button.clicked.connect(self.generate_image)
+        self.show_result_button.clicked.connect(self.processing)
 
         lower_bar_layout.addWidget(self.pencil_button)
         lower_bar_layout.addWidget(self.eraser_button)
@@ -149,7 +152,12 @@ class DrawingApp(QMainWindow):
             self.height() - self.canvas_and_toolbar_container.height() - 10
         )
 
+    def processing(self):
+        self.result_area.setMovie(self.movie)
+        self.movie.start()
+
     def update_result(self, output):
+        self.result_area.clear()
         self.result_area.setPixmap(QPixmap.fromImage(ImageQt.toqimage(output.convert("RGBA"))))
 
     def generate_image(self):
