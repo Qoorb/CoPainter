@@ -162,8 +162,8 @@ class Model:
                 guidance_scale=guidance_scale,
                 adapter_conditioning_scale=adapter_conditioning_scale,
                 adapter_conditioning_factor=adapter_conditioning_factor,
-                callback_on_step_end=self.decode_tensors,
-                callback_on_step_end_tensor_inputs=["latents"],
+                # callback_on_step_end=self.decode_tensors,
+                # callback_on_step_end_tensor_inputs=["latents"],
             ).images[0]
         
         return out.resize((600, 600)) # resize pics
