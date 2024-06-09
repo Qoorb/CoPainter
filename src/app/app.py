@@ -114,7 +114,13 @@ class DrawingApp(QMainWindow):
         self.pencil_button.setIcon(QIcon(QPixmap('src/app/assets/pencil_icon.png')))
         self.pencil_button.setIconSize(QSize(24, 24))
         self.pencil_button.setFixedSize(24, 24)
-        self.pencil_button.setStyleSheet("border: none;")
+        self.pencil_button.setStyleSheet('''QPushButton {
+                                         border-radius: 50px;
+                                         }
+                                         QPushButton:pressed { 
+                                         background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #156825, stop: 1 #156825);
+                                         border-radius: 50px;
+                                         }''') # TEST
         self.pencil_button.clicked.connect(self.drawing_area.use_pencil)
 
         self.eraser_button = QPushButton(self)
@@ -218,7 +224,7 @@ class DrawingArea(QWidget):
 
         canvas.drawImage(self.rect(), self.image)
 
-        pen = QPen(Qt.GlobalColor.lightGray)
+        pen = QPen(QColor('#29be46'))
         pen.setWidth(1)
         canvas.setPen(pen)
         canvas.drawRect(self.rect().adjusted(0, 0, -1, -1))
