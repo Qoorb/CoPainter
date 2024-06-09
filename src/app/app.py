@@ -3,7 +3,8 @@ from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPen, QColor, QImage, QMovie
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
     QHBoxLayout, QWidget, QPushButton,
-    QLabel, QFrame, QStackedWidget
+    QLabel, QFrame, QStackedWidget,
+    QComboBox
 )
 
 from PIL import ImageQt
@@ -18,15 +19,16 @@ class WorkerSignals(QObject):
 
 class Worker(QRunnable):
 
-    def __init__(self, generate_result, img):
+    def __init__(self, generate_result, img, draw_style):
         super(Worker, self).__init__()
         self.generate_result = generate_result
         self.img = img
+        self.draw_style = draw_style
         self.signals = WorkerSignals()
         
     @pyqtSlot()
     def run(self):
-        result = self.generate_result(ImageQt.fromqimage(self.img))
+        result = self.generate_result(ImageQt.fromqimage(self.img), style_name=self.draw_style)
         self.signals.result.emit(result)
         self.signals.finished.emit()
 
@@ -36,6 +38,7 @@ class DrawingApp(QMainWindow):
     def __init__(self):
         super(DrawingApp, self).__init__()
         self.model = Model()
+        self.draw_style = '(No style)'
         self.initUI()
         self.threadpool = QThreadPool()
 
@@ -89,8 +92,19 @@ class DrawingApp(QMainWindow):
         canvas_layout.addWidget(self.drawing_area, alignment=Qt.AlignmentFlag.AlignHCenter)
         canvas_layout.addWidget(self.result_area, alignment=Qt.AlignmentFlag.AlignHCenter)
 
+        self.styles_box = QComboBox()
+        self.styles_box.addItems([
+            '(No style)', 'Cinematic', '3D Model',
+            'Anime', 'Digital Art', 'Photographic',
+            'Pixel art', 'Fantasy art', 'Neonpunk',
+            'Manga'
+            ])
+        self.styles_box.setStyleSheet("border: none;")
+        self.styles_box.setFixedSize(144, 24)
+        self.styles_box.activated.connect(self.change_style)
+
         self.lower_bar = QFrame(self)
-        self.lower_bar.setFixedSize(250, 36)
+        self.lower_bar.setFixedSize(350, 36)
         self.lower_bar.setStyleSheet("background-color: #29be46; border-radius: 16px;")
 
         lower_bar_layout = QHBoxLayout(self.lower_bar)
@@ -125,6 +139,7 @@ class DrawingApp(QMainWindow):
         self.show_result_button.clicked.connect(self.generate_image)
         self.show_result_button.clicked.connect(self.processing)
 
+        lower_bar_layout.addWidget(self.styles_box)
         lower_bar_layout.addWidget(self.pencil_button)
         lower_bar_layout.addWidget(self.eraser_button)
         lower_bar_layout.addWidget(self.clear_button)
@@ -152,6 +167,9 @@ class DrawingApp(QMainWindow):
             self.height() - self.canvas_and_toolbar_container.height() - 10
         )
 
+    def change_style(self, _): # We receive the index, but don't use it.
+        self.draw_style = self.styles_box.currentText()
+
     def processing(self):
         self.result_area.setMovie(self.movie)
         self.movie.start()
@@ -161,7 +179,7 @@ class DrawingApp(QMainWindow):
         self.result_area.setPixmap(QPixmap.fromImage(ImageQt.toqimage(output.convert("RGBA"))))
 
     def generate_image(self):
-        worker = Worker(self.model.run, self.drawing_area.image)
+        worker = Worker(self.model.run, self.drawing_area.image, self.draw_style)
         worker.signals.result.connect(self.update_result)
         self.threadpool.start(worker)
 
