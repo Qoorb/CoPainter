@@ -149,8 +149,8 @@ class Model:
         seed = randomize_seed_fn(seed, True)
 
         # logging pics before processing
-        if not op.exists('images/{style_name}/'): os.mkdir('images/{style_name}')
-        image.save(f'images/{style_name}/{datetime.datetime.now()}_before.png')
+        if not op.exists(f'images/{style_name}/'): os.mkdir(f'images/{style_name}')
+        image.save(f'images/{style_name}/{str(datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S"))}_before.png')
 
         image = PIL.ImageOps.invert(image.convert("RGB").resize((1024, 1024)))
         image = TF.to_tensor(image) > 0.5
@@ -174,6 +174,6 @@ class Model:
             ).images[0]
         
         # logging pics after processing
-        out.save(f'images/{style_name}/{datetime.datetime.now()}_after.png')
+        out.save(f'images/{style_name}/{str(datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S"))}_after.png')
         
         return out.resize((600, 600)) # resize pics
