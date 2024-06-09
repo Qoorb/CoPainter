@@ -1,4 +1,7 @@
 import random
+import datetime
+import os
+import os.path as op
 
 import PIL.ImageOps
 import numpy as np
@@ -145,6 +148,10 @@ class Model:
     ) -> PIL.Image.Image:
         seed = randomize_seed_fn(seed, True)
 
+        # logging pics before processing
+        if not op.exists('images/{style_name}/'): os.mkdir('images/{style_name}')
+        image.save(f'images/{style_name}/{datetime.datetime.now()}_before.png')
+
         image = PIL.ImageOps.invert(image.convert("RGB").resize((1024, 1024)))
         image = TF.to_tensor(image) > 0.5
         image = TF.to_pil_image(image.to(torch.float32))
@@ -165,5 +172,8 @@ class Model:
                 # callback_on_step_end=self.decode_tensors,
                 # callback_on_step_end_tensor_inputs=["latents"],
             ).images[0]
+        
+        # logging pics after processing
+        out.save(f'images/{style_name}/{datetime.datetime.now()}_after.png')
         
         return out.resize((600, 600)) # resize pics

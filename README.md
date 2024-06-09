@@ -8,19 +8,23 @@ Co-painter ― This is a study project. This is a simple drawing application whe
 
 ### 1. Clone the repository, go to the project folder
 
-`git@github.com:Qoorb/CoPainter.git`
+    git@github.com:Qoorb/CoPainter.git
 
 ### 2. Create virtual environment venv
 
-`python -m venv .venv`
+    python -m venv .venv
 
 ### 3. Install required dependencies
 
-`pip install -r requirements.txt`
+    pip install -r requirements.txt
 
-### 4. Run the `run.py` file
+### 4. Create an `images` folder for saving your doodles
 
-`python run.py`
+    mkdir PROJECT_PATH/images
+
+### 5. Run the `run.py` file
+
+    python run.py
 
 ## TODO
 
