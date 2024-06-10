@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
     QLabel, QFrame, QStackedWidget,
     QComboBox
 )
+from PyQt6.QtSvgWidgets import QSvgWidget
 
 from PIL import ImageQt
 from src.model import Model
@@ -74,9 +75,10 @@ class DrawingApp(QMainWindow):
         header_layout = QHBoxLayout(self.top_bar)
         header_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.logo_area = QLabel()
-        self.logo_area.setPixmap(QPixmap('src/app/assets/logo.png').scaled(250, 100, Qt.AspectRatioMode.KeepAspectRatio))
-        
+        self.logo_area = QSvgWidget('src/app/assets/test.svg') # QLabel()
+        self.logo_area.setFixedSize(350, 50)
+        # self.logo_area.setPixmap(QPixmap('src/app/assets/logo.png').scaled(250, 100, Qt.AspectRatioMode.KeepAspectRatio))
+
         self.sep_area = QLabel()
         self.sep_area.setPixmap(QPixmap('src/app/assets/line.png'))
 
