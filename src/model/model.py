@@ -10,7 +10,6 @@ import torchvision.transforms.functional as TF
 from diffusers import ControlNetModel, StableDiffusionXLControlNetPipeline, AutoencoderKL
 from diffusers import DDIMScheduler, EulerAncestralDiscreteScheduler
 from diffusers.utils import load_image
-from huggingface_hub import HfApi
 from pathlib import Path
 from PIL import Image, ImageOps
 import torch
