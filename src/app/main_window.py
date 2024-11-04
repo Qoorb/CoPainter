@@ -7,7 +7,8 @@ from .widgets import DrawingArea, ToolBar, TopBar, ResultArea
 from .workers import ImageGeneratorWorker
 from .constants import UIConstants
 from .error_handling import ErrorHandler
-from src.model import Model
+
+from ..model import Model
 
 
 class DrawingApp(QMainWindow):

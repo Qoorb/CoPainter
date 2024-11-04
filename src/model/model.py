@@ -9,39 +9,41 @@ from diffusers import (
     ControlNetModel,
     StableDiffusionXLControlNetPipeline,
     AutoencoderKL,
+    EulerAncestralDiscreteScheduler
 )
-from diffusers import EulerAncestralDiscreteScheduler
 
 from .utils import DEFAULT_STYLE_NAME, apply_style
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
 class Model:
     def __init__(self) -> None:
-        dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
+        self.dtype = (
+            torch.float16 if torch.cuda.is_available() else torch.float32
+        )
 
         self.controlnet = ControlNetModel.from_pretrained(
             "xinsir/controlnet-scribble-sdxl-1.0",
-            torch_dtype=dtype
+            torch_dtype=self.dtype
         )
 
         self.vae = AutoencoderKL.from_pretrained(
             "madebyollin/sdxl-vae-fp16-fix",
-            torch_dtype=dtype
+            torch_dtype=self.dtype
         )
 
         self.pipe = StableDiffusionXLControlNetPipeline.from_pretrained(
             "sd-community/sdxl-flash",
             controlnet=self.controlnet,
             vae=self.vae,
-            torch_dtype=dtype,
+            torch_dtype=self.dtype,
         )
         self.pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(
             self.pipe.scheduler.config
         )
-        self.pipe.to(device)
+        self.pipe.to(self.device)
 
     # def latents_to_rgb(self, latents):
     #     weights = (
@@ -92,7 +94,7 @@ class Model:
             style_name, prompt, negative_prompt
         )
 
-        generator = torch.Generator(device=device).manual_seed(seed)
+        generator = torch.Generator(device=self.device).manual_seed(seed)
 
         out = self.pipe(
             prompt=prompt,

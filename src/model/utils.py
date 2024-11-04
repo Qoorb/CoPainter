@@ -3,6 +3,7 @@ from pathlib import Path
 import random
 import numpy as np
 
+
 styles_path = Path(__file__).parent / "styles.json"
 with open(styles_path, "r") as f:
     style_list = json.load(f)["styles"]
