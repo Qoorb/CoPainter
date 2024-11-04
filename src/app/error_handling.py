@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QMessageBox
 
+
 class ErrorHandler:
     @staticmethod
     def show_error(parent, message):
@@ -13,6 +14,5 @@ class ErrorHandler:
     @staticmethod
     def handle_generation_error(parent, error_message):
         ErrorHandler.show_error(
-            parent,
-            f"Ошибка при генерации изображения: {error_message}"
-        ) 
+            parent, f"Ошибка при генерации изображения: {error_message}"
+        )
