@@ -1,4 +1,5 @@
-from .app import DrawingApp, QApplication
+from .main_window import DrawingApp
+from PyQt6.QtWidgets import QApplication
 import sys
 
 

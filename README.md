@@ -14,15 +14,23 @@ Co-painter ― This is a study project. This is a simple drawing application whe
 
     python -m venv .venv
 
-### 3. Install required dependencies
+### 3. Activate virtual environment
+
+#### Windows:
+    .venv\Scripts\activate
+
+#### Linux/MacOS:
+    source .venv/bin/activate
+
+### 4. Install required dependencies
 
     pip install -r requirements.txt
 
-### 4. Create an `images` folder for saving your doodles
+### 5. Create an `images` folder for saving your doodles
 
     mkdir PROJECT_PATH/images
 
-### 5. Run the `run.py` file
+### 6. Run the `run.py` file
 
     python run.py
 
@@ -30,3 +38,11 @@ Co-painter ― This is a study project. This is a simple drawing application whe
 
 - [ ] test params
 - [ ] fix draw/pen
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+
+[MIT](https://github.com/Qoorb/CoPainter/blob/main/LICENSE)
